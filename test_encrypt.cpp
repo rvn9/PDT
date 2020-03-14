@@ -1,10 +1,10 @@
-#pragma warning(disable:4996)
 #include <mpi.h> 
 #include <stdio.h> 
 #include <stdlib.h> 
 #include <iostream>
 #include <string>
 
+// ALGO caesar chiper // 
 char caesar(char msg, int k) {
 
     if (isupper(msg)) {
@@ -49,19 +49,28 @@ int main(int argc, char* argv[])
     // master process 
     if (pid == 0) {
         int index, i;
+
+        do {
+            std::cout << "Masukkan Kata : ";
+            std::cin >> plaintext; // MASUKAN PLAINTEXT //
+            fflush(stdout);
+
+
+            std::cout << "Masukan jumlah shift : ";
+            std::cin >> shift;
+            fflush(stdout);
+
+
+            n = strlen(plaintext);
+            elements_per_process = n / np;
+            if (n < np) {
+                printf("Jumlah Karakter kurang dari jumlah processor, Silakan input ulang kata\n\n");
+            }
+            
+        } while (n < np);
        
-        std::cout << "Masukkan Kata : ";
-        std::cin >> plaintext; // MASUKAN PLAINTEXT //
-        fflush(stdout);
-
-        std::cout << "Masukan jumlah shift : ";
-        std::cin >> shift;
-        fflush(stdout);
-
-        n = strlen(plaintext);
-        elements_per_process = n / np;
         // check if more than 1 processes are run 
-
+        
     }
 
     MPI_Bcast(&shift, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -72,7 +81,7 @@ int main(int argc, char* argv[])
         if (np > 1) {
             // distributes the portion of array 
             // to child processes
-            for (i = 1; i <np - 1; i++) {
+            for (i = 1; i < np - 1; i++) {
                 index = i * elements_per_process;
 
                 MPI_Send(&elements_per_process,
@@ -103,8 +112,10 @@ int main(int argc, char* argv[])
             printf("processor %d ada data %c\n", pid, plaintext[i]);
             chipertext_master[i] = caesar(plaintext[i], shift);
         }
+
+
         printf("MASTER : %s", chipertext_master);
-        
+
 
     }
     // slave processes 
@@ -127,20 +138,21 @@ int main(int argc, char* argv[])
             chipertext_slave[i] = caesar(a2[i], shift);
         }
 
+        // NGE SEND hasil enkripsi slave ke master // 
         MPI_Send((void*)&chipertext_slave,
             n_elements_recieved,
             MPI_CHAR, 0, 99,
             MPI_COMM_WORLD);
-        
+
 
         MPI_Send(&n_elements_recieved,
             1, MPI_INT,
             0, 0,
             MPI_COMM_WORLD);
-  
+
 
         printf("SLAVE : %s\n\n", chipertext_slave);
-   
+
 
     }
     // PRINT TIME //
@@ -148,7 +160,8 @@ int main(int argc, char* argv[])
         elapsed_time += MPI_Wtime();
         // printf("Hasil encoding adalah %s", hasil);
         printf("\n\nTotal elapsed time: %10.6f\n", elapsed_time);
-        
+
+        // INI Ngerecieve semua enkripsi dari setiap slave processor //
         for (int i = 1; i < np;i++) {
             MPI_Recv(&terima_slave,
                 1, MPI_INT, MPI_ANY_SOURCE, 0,
@@ -159,13 +172,16 @@ int main(int argc, char* argv[])
                 MPI_CHAR, MPI_ANY_SOURCE, 99,
                 MPI_COMM_WORLD,
                 &status);
+
+            strcat_s(chipertext_master, sizeof(a3) ,a3);
+
         }
-       
-        
+
+
         // GABUNGIN HASIL ENKRIPSI SLAVE SAMA MASTER //
-        strcat(chipertext_master, a3);
-        printf("Hasil encode : %s \n", chipertext_master);
         
+        printf("Hasil encode : %s \n", chipertext_master);
+
     }
 
     // cleans up all MPI state before exit of process 
