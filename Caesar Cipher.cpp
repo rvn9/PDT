@@ -1,6 +1,4 @@
-// CREATED BY ANDREAS AGUSTINUS //
-// Contact person: Andreasagustinus11@gmail.com //
-// FEEL FREE TO USE THE CODE, FOR EDUCATIONAL PURPOSE //
+
 
 #include <mpi.h> 
 #include <stdio.h> 
